@@ -1,0 +1,56 @@
+{
+  "annotations": true,
+  "$schema": "https://raw.githubusercontent.com/grafana/grafana/master/docs/sources/developers/plugins/plugin.schema.json",
+  "type": "datasource",
+  "name": "Shoreline Datasource",
+  "id": "shoreline-datasource",
+  "metrics": true,
+  "info": {
+    "description": "Shoreline data source",
+    "author": {
+      "name": "Shoreline Software",
+      "url": "https://shoreline.io/"
+    },
+    "keywords": [
+      "shoreline"
+    ],
+    "logos": {
+      "small": "img/shoreline_logo.png",
+      "large": "img/shoreline_logo.png"
+    },
+    "links": [
+      {
+        "name": "Website",
+        "url": "https://shoreline.io/"
+      },
+      {
+        "name": "License",
+        "url": "https://github.com/grafana/grafana-starter-datasource/blob/master/LICENSE"
+      }
+    ],
+    "screenshots": [
+      {
+        "name": "Panel editor",
+        "path": "img/panel_editor.png"
+      }
+    ],
+    "version": "%VERSION%",
+    "updated": "%TODAY%"
+  },
+  "dependencies": {
+    "grafanaDependency": ">=7.0.0",
+    "plugins": []
+  },
+  "routes": [
+    {
+      "path": "",
+      "url": "{{ .JsonData.shorelineUrl }}",
+      "headers": [
+        {
+          "name": "Authorization",
+          "content": "Bearer {{ .SecureJsonData.apiKey }}"
+        }
+      ]
+    }
+  ]
+}
