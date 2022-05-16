@@ -1,10 +1,10 @@
 import React, { ChangeEvent, PureComponent } from 'react';
-import { LegacyForms, InlineFormLabel, Checkbox } from '@grafana/ui';
+import { LegacyForms, InlineFormLabel, InlineField, InlineFieldRow, Input, Checkbox } from '@grafana/ui';
 import { QueryEditorProps, SelectableValue } from '@grafana/data';
 import { DataSource } from './datasource';
 import { MyDataSourceOptions, MyQuery } from './types';
 
-const { FormField, Select } = LegacyForms;
+const { Select } = LegacyForms;
 
 type Props = QueryEditorProps<DataSource, MyQuery, MyDataSourceOptions>;
 
@@ -56,14 +56,17 @@ export class QueryEditor extends PureComponent<Props> {
     return (
       <div className="gf-form">
         {this.state.custom ? (
-          <FormField
-            label={'OpLang Statement'}
-            placeholder={'Custom OpLang Statement'}
-            labelWidth={10}
-            inputWidth={30}
-            onChange={this.onCustomQueryTextChange}
-            defaultValue={this.props.query.customQueryText}
-          />
+          <InlineFieldRow>
+            <InlineField label="OpLang Statement" grow>
+              <Input
+                type="text"
+                value={this.props.query.customQueryText || ''}
+                onChange={this.onCustomQueryTextChange}
+                placeholder={'Custom OpLang Statement'}
+                width={125}
+              />
+            </InlineField>
+          </InlineFieldRow>
         ) : (
           <div className="gf-form">
             <InlineFormLabel width={10}>Resource Query</InlineFormLabel>
