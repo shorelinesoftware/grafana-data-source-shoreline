@@ -122,14 +122,20 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
   }
 
   async metricFindQuery(query: MyVariableQuery, options?: any) {
+    if (query.query === '' || query.query === undefined) {
+      throw new Error('Must provide a nonempty query');
+    }
     return this.execOp(query.query).then((response) => {
-      return response.resources.map((resource: any) => {
-        // handle resource chains, e.g. host | pod
-        if (Array.isArray(resource)) {
-          return { text: resource[resource.length - 1].name };
-        }
-        return { text: resource.name };
-      });
+      if ('resources' in response) {
+        return response.resources.map((resource: any) => {
+          // handle resource chains, e.g. host | pod
+          if (Array.isArray(resource)) {
+            return { text: resource[resource.length - 1].name };
+          }
+          return { text: resource.name };
+        });
+      }
+      throw new Error('Variable query must be a resource query');
     });
   }
 
@@ -161,6 +167,9 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
   }
 
   async annotationQuery(options: AnnotationQueryRequest<MyQuery>): Promise<AnnotationEvent[]> {
+    if (options.annotation.expr === '' || options.annotation.expr === undefined) {
+      throw new Error('Must provide a nonempty annotation query');
+    }
     let stmt = `${options.annotation.expr} | from=${options.range.from.unix() * 1000} | to=${
       options.range.to.unix() * 1000
     }`;
@@ -185,6 +194,9 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
   }
 
   async execOp(stmt: string) {
+    if (stmt === '' || stmt === undefined) {
+      throw new Error('Must provide a nonempty statement');
+    }
     return getBackendSrv()
       .datasourceRequest({
         method: 'POST',
