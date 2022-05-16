@@ -124,6 +124,10 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
   async metricFindQuery(query: MyVariableQuery, options?: any) {
     return this.execOp(query.query).then((response) => {
       return response.resources.map((resource: any) => {
+        // handle resource chains, e.g. host | pod
+        if (Array.isArray(resource)) {
+          return { text: resource[resource.length - 1].name };
+        }
         return { text: resource.name };
       });
     });
