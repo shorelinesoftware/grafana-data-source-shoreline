@@ -152,6 +152,15 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
           };
           return res;
         });
+      case 'ACTION':
+        return annotation.steps.map((step: any) => {
+          return {
+            title: `${step.step_type}: ${annotation.action.name} on ${annotation.resource_data.resource_name}`,
+            text: `BOT: ${annotation.bot.name}, ACTION: ${annotation.action.name}`,
+            time: step.timestamp,
+            tags: [annotation.status],
+          };
+        });
       case 'ALARM':
         return annotation.steps.map((step: any) => {
           return {
@@ -160,9 +169,17 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
             tags: [annotation.status],
           };
         });
-      // TODO other annotation types
+      case 'BOT':
+        return annotation.steps.map((step: any) => {
+          return {
+            title: `${step.step_type}: ${annotation.bot.name} on ${annotation.resource_data.resource_name}`,
+            text: `ALARM: ${annotation.alarm.name}, ACTION: ${annotation.action.name}`,
+            time: step.timestamp,
+            tags: [annotation.status],
+          };
+        });
       default:
-        return [];
+        throw new Error(`Events of type ${annotation.entity_type} not supported`);
     }
   }
 
