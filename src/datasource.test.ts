@@ -72,68 +72,69 @@ describe('Shoreline datasource', () => {
     });
 
     it('should return expected frames on simple query', async () => {
-      (getBackendSrv as jest.Mock).mockImplementation(() => {
-        return {
-          datasourceRequest: () => {
-            return Promise.resolve({
-              data: {
-                metric_query: [
+      let mockDatasourceRequest = jest.fn(() => {
+        return Promise.resolve({
+          data: {
+            metric_query: [
+              {
+                group_infos: [
                   {
-                    group_infos: [
-                      {
-                        group: 'METRIC',
-                        name: '',
-                        value: 'cpu_usage',
-                      },
-                      {
-                        group: 'RESOURCE',
-                        name: '',
-                        value: '1',
-                      },
-                    ],
-                    metric: {
-                      values: [3],
-                      timestamps: [1000],
-                      tags: {},
-                      sampling_resolution: 0,
-                      resource_name: '1',
-                      origin: '',
-                      name: 'cpu_usage',
-                      metadata_id: 0,
-                      labels: {},
-                    },
+                    group: 'METRIC',
+                    name: '',
+                    value: 'cpu_usage',
+                  },
+                  {
+                    group: 'RESOURCE',
+                    name: '',
+                    value: '1',
                   },
                 ],
-                resources: [
+                metric: {
+                  values: [3],
+                  timestamps: [1000],
+                  tags: {},
+                  sampling_resolution: 0,
+                  resource_name: '1',
+                  origin: '',
+                  name: 'cpu_usage',
+                  metadata_id: 0,
+                  labels: {},
+                },
+              },
+            ],
+            resources: [
+              {
+                type: 'HOST',
+                tags: [
                   {
-                    type: 'HOST',
-                    tags: [
-                      {
-                        value: 'linux',
-                        key: 'kubernetes.io/os',
-                      },
-                    ],
-                    parent: '',
-                    name: 'i-07495dacd87d73a63',
-                    id: 1,
-                    attributes: [
-                      {
-                        value: '5051',
-                        key: 'port',
-                      },
-                    ],
+                    value: 'linux',
+                    key: 'kubernetes.io/os',
+                  },
+                ],
+                parent: '',
+                name: 'i-07495dacd87d73a63',
+                id: 1,
+                attributes: [
+                  {
+                    value: '5051',
+                    key: 'port',
                   },
                 ],
               },
-            });
+            ],
           },
+        });
+      });
+      (getBackendSrv as jest.Mock).mockImplementation(() => {
+        return {
+          datasourceRequest: mockDatasourceRequest,
         };
       });
 
       const ds = new DataSource({ name: '', id: 0, jsonData: {} } as any);
       const result = await ds.query({
         targets: [{ refId: 'A', resourceQueryText: 'host', metricQueryText: 'cpu_usage' }],
-        range: { from: dateTime(1000), to: dateTime(1000) },
+        range: { from: dateTime(1000), to: dateTime(2000) },
       } as any as DataQueryRequest<MyQuery>);
       expect(result.data.length).toEqual(1);
       expect(result.data[0].name).toEqual('cpu_usage: i-07495dacd87d73a63');
@@ -142,11 +143,17 @@ describe('Shoreline datasource', () => {
       expect(timestamps.name).toEqual('Time');
       expect(timestamps.type).toEqual('time');
       expect(timestamps.values.length).toEqual(1);
+      expect(timestamps.values.buffer[0]).toEqual(1000);
 
       let values = result.data[0].fields[1];
       expect(values.name).toEqual('Value');
       expect(values.type).toEqual('number');
       expect(values.values.length).toEqual(1);
+      expect(values.values.buffer[0]).toEqual(3);
+
+      expect((mockDatasourceRequest.mock.calls[0] as any)[0].data.statement).toEqual(
+        'host | cpu_usage | from=1000 | to=2000'
+      );
     });
   });
 });
