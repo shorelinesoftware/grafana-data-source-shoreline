@@ -1,7 +1,7 @@
 import { dateTime, DataQueryRequest } from '@grafana/data';
 import { getBackendSrv } from '@grafana/runtime';
 import { DataSource } from './datasource';
-import { MyQuery } from './types';
+import { MyQuery, MyVariableQuery } from './types';
 
 jest.mock('@grafana/runtime', () => ({
   ...(jest.requireActual('@grafana/runtime') as any),
@@ -154,6 +154,118 @@ describe('Shoreline datasource', () => {
       expect((mockDatasourceRequest.mock.calls[0] as any)[0].data.statement).toEqual(
         'host | cpu_usage | from=1000 | to=2000'
       );
+    });
+  });
+
+  describe('when performing metricFindQuery call', () => {
+    it('should return resource names on resource query', async () => {
+      let mockDatasourceRequest = jest.fn(() => {
+        return Promise.resolve({
+          data: {
+            resources: [
+              {
+                type: 'HOST',
+                tags: [
+                  {
+                    value: 'linux',
+                    key: 'kubernetes.io/os',
+                  },
+                ],
+                parent: '',
+                name: 'i-07495dacd87d73a63',
+                id: 1,
+                attributes: [
+                  {
+                    value: '5051',
+                    key: 'port',
+                  },
+                ],
+              },
+            ],
+          },
+        });
+      });
+      (getBackendSrv as jest.Mock).mockImplementation(() => {
+        return {
+          datasourceRequest: mockDatasourceRequest,
+        };
+      });
+
+      const ds = new DataSource({ name: '', id: 0, jsonData: {} } as any);
+      const result = await ds.metricFindQuery({
+        query: 'host',
+      } as any as MyVariableQuery);
+      expect(result[0].text).toEqual('i-07495dacd87d73a63');
+
+      expect((mockDatasourceRequest.mock.calls[0] as any)[0].data.statement).toEqual('host');
+    });
+
+    it('should return symbol names on list symbol', async () => {
+      let mockDatasourceRequest = jest.fn(() => {
+        return Promise.resolve({
+          data: {
+            list_type: {
+              symbol: [
+                {
+                  attributes: {
+                    description: 'All pods',
+                    name: 'pods',
+                    params: '',
+                    read_only: 'true',
+                    res_env_var: '',
+                    resource_query: '',
+                    resource_type: '',
+                    shell: '',
+                    timeout: '',
+                    type: 'RESOURCE',
+                    units: '',
+                    user: '',
+                    value: 'resources(type="POD")',
+                  },
+                  formula: 'resources(type="POD")',
+                  name: 'pods',
+                  type: 'RESOURCE',
+                },
+                {
+                  attributes: {
+                    description: 'All containers',
+                    name: 'containers',
+                    params: '',
+                    read_only: 'true',
+                    res_env_var: '',
+                    resource_query: '',
+                    resource_type: '',
+                    shell: '',
+                    timeout: '',
+                    type: 'RESOURCE',
+                    units: '',
+                    user: '',
+                    value: 'resources(type="CONTAINER")',
+                  },
+                  formula: 'resources(type="CONTAINER")',
+                  name: 'containers',
+                  type: 'RESOURCE',
+                },
+              ],
+            },
+          },
+        });
+      });
+      (getBackendSrv as jest.Mock).mockImplementation(() => {
+        return {
+          datasourceRequest: mockDatasourceRequest,
+        };
+      });
+
+      const ds = new DataSource({ name: '', id: 0, jsonData: {} } as any);
+      const result = await ds.metricFindQuery({
+        query: 'list resources',
+      } as any as MyVariableQuery);
+      expect(result.length).toEqual(2);
+      expect(result[0].text).toEqual('pods');
+      expect(result[1].text).toEqual('containers');
+
+      expect((mockDatasourceRequest.mock.calls[0] as any)[0].data.statement).toEqual('list resources');
     });
   });
 });

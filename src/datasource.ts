@@ -135,7 +135,12 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
           return { text: resource.name };
         });
       }
-      throw new Error('Variable query must be a resource query');
+      if ('list_type' in response) {
+        return response.list_type.symbol.map((symbol: any) => {
+          return { text: symbol.name };
+        });
+      }
+      throw new Error('Variable query must be a resource query or list symbol');
     });
   }
 
