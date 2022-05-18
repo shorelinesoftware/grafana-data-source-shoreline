@@ -12,9 +12,7 @@ export interface MyVariableQuery {
   query: string;
 }
 
-export const defaultQuery: Partial<MyQuery> = {
-  // constant: 6.5,
-};
+export const defaultQuery: Partial<MyQuery> = {};
 
 /**
  * These are options configured for each DataSource instance
