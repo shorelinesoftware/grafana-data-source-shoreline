@@ -200,8 +200,8 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
 
     if ('resources' in result === false) {
       return {
-        status: 'fail',
-        message: `Health check test query failed, response data: ${result}`,
+        status: 'error',
+        message: `Health check test query failed, response data: ${JSON.stringify(result)}`,
       };
     }
     return {
