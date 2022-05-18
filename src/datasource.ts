@@ -15,13 +15,6 @@ import { getBackendSrv, getTemplateSrv } from '@grafana/runtime';
 
 import { MyQuery, MyDataSourceOptions, MyVariableQuery } from './types';
 
-export interface ShorelineQueryRequest {
-  startTimeMs: number;
-  endTimeMs: number;
-  metricQuery: string;
-  resourceQuery: string;
-}
-
 const execute_path = '/v1/execute';
 
 export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
