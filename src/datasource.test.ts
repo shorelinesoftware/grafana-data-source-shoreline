@@ -1,4 +1,4 @@
-import { dateTime, DataQueryRequest } from '@grafana/data';
+import { AnnotationQueryRequest, dateTime, DataQueryRequest } from '@grafana/data';
 import { getBackendSrv } from '@grafana/runtime';
 import { DataSource } from './datasource';
 import { MyQuery, MyVariableQuery } from './types';
@@ -266,6 +266,117 @@ describe('Shoreline datasource', () => {
       expect(result[1].text).toEqual('containers');
 
       expect((mockDatasourceRequest.mock.calls[0] as any)[0].data.statement).toEqual('list resources');
+    });
+  });
+
+  describe('when performing annotation query call', () => {
+    it('should return correct result on alarm events query', async () => {
+      let mockDatasourceRequest = jest.fn(() => {
+        return Promise.resolve({
+          data: {
+            resources: [
+              {
+                type: 'HOST',
+                tags: [
+                  {
+                    value: 'linux',
+                    key: 'kubernetes.io/os',
+                  },
+                ],
+                parent: '',
+                name: 'i-07495dacd87d73a63',
+                id: 1,
+                attributes: [
+                  {
+                    value: '5051',
+                    key: 'port',
+                  },
+                ],
+              },
+            ],
+            annotation_query_rollup: {
+              annotation_details: [],
+              annotation_list: [
+                {
+                  action: null,
+                  alarm: {
+                    central_id: 1652933808,
+                    description: '',
+                    enabled: false,
+                    local_id: 4294967381,
+                    name: 'cpu_host_alarm',
+                  },
+                  annotation_id: {
+                    central_id: 1652933808,
+                    local_id: 4294967380,
+                  },
+                  bot: null,
+                  class_details: '',
+                  class_id: {
+                    central_id: 300004229,
+                    local_id: 0,
+                    version: 2,
+                  },
+                  entity_type: 'ALARM',
+                  instance_details: '',
+                  resource_data: {
+                    host_id: '1',
+                    resource_id: '1',
+                    resource_name: 'i-07495dacd87d73a63',
+                    resource_tags: {
+                      'kubernetes.io/os': {
+                        tag_values: ['linux'],
+                      },
+                    },
+                    resource_type: 'HOST',
+                  },
+                  row_details:
+                    '{"family":"custom","fire_query":"((cpu_usage > 0) | sum(10)) >= 5","metric_name":"cpu_usage"}',
+                  status: 'resolved',
+                  steps: [
+                    {
+                      description: '',
+                      resource_data: null,
+                      step_details: null,
+                      step_id: null,
+                      step_source: null,
+                      step_type: 'ALARM_FIRE',
+                      timestamp: 1652933807000,
+                      title: 'fired cpu_host_alarm',
+                    },
+                    {
+                      description: '',
+                      resource_data: null,
+                      step_details: null,
+                      step_id: null,
+                      step_source: null,
+                      step_type: 'ALARM_CLEAR',
+                      timestamp: 1652933813000,
+                      title: 'cleared cpu_host_alarm',
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        });
+      });
+      (getBackendSrv as jest.Mock).mockImplementation(() => {
+        return {
+          datasourceRequest: mockDatasourceRequest,
+        };
+      });
+
+      const ds = new DataSource({ name: '', id: 0, jsonData: {} } as any);
+      const result = await ds.annotationQuery({
+        annotation: { expr: 'events' },
+        range: { from: dateTime(1000), to: dateTime(2000) },
+      } as any as AnnotationQueryRequest<MyQuery>);
+      expect(result.length).toEqual(2);
+      expect(result[0].title).toEqual('ALARM_FIRE: cpu_host_alarm on i-07495dacd87d73a63');
+      expect(result[1].title).toEqual('ALARM_CLEAR: cpu_host_alarm on i-07495dacd87d73a63');
+
+      expect((mockDatasourceRequest.mock.calls[0] as any)[0].data.statement).toEqual('events | from=1000 | to=2000');
     });
   });
 });
