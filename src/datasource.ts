@@ -77,8 +77,64 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
 
   buildResourceIdToName(resources: any[]): Map<string, string> {
     let map: Map<string, string> = new Map<string, string>();
-    resources.forEach((resource) => map.set(resource.id.toString(), resource.name));
+    resources.forEach((resource) => {
+      // handle resource chains, e.g. host | pod
+      if (Array.isArray(resource)) {
+        // return { text: resource[resource.length - 1].name };
+        resource = resource[resource.length - 1];
+      }
+      map.set(resource.id.toString(), resource.name);
+    });
     return map;
+  }
+
+  buildMetricQueryFrame(metricData: any, refId: string, stmt: string, resourceIdToName: Map<string, string>) {
+    let metricName = this.getGroupInfo(metricData, 'METRIC');
+    let resourceId = this.getGroupInfo(metricData, 'RESOURCE');
+    let resourceName = resourceIdToName.get(resourceId) || resourceId;
+    let frameName = `${metricName}: ${resourceName}`;
+    let tagsStr = this.getTagsStr(metricData);
+    if (tagsStr !== '') {
+      frameName += ` { ${tagsStr} }`;
+    }
+    return new MutableDataFrame({
+      refId: refId,
+      name: frameName,
+      meta: {
+        executedQueryString: stmt,
+      },
+      fields: [
+        { name: 'Time', type: FieldType.time, values: metricData.metric.timestamps },
+        { name: 'Value', type: FieldType.number, values: metricData.metric.values },
+      ],
+    });
+  }
+
+  buildLinuxCmdDataFrames(response: any, refId: string, resourceIdToName: Map<string, string>) {
+    let resourceNames: string[] = [];
+    let stdoutValues: string[] = [];
+    let stderrValues: string[] = [];
+    let exitStatusValues: number[] = [];
+
+    response.linux_cmd.forEach((cmdRes: any) => {
+      resourceNames.push(cmdRes.pod || resourceIdToName.get(cmdRes.host_id.toString()));
+      stdoutValues.push(cmdRes.stdout);
+      stderrValues.push(cmdRes.stderr);
+      exitStatusValues.push(cmdRes.exit_status);
+    });
+    return new MutableDataFrame({
+      refId: refId,
+      name: 'linux_cmd',
+      meta: {
+        executedQueryString: response.stmt,
+      },
+      fields: [
+        { name: 'Resource Name', type: FieldType.string, values: resourceNames },
+        { name: 'stdout', type: FieldType.string, values: stdoutValues },
+        { name: 'stderr', type: FieldType.string, values: stderrValues },
+        { name: 'Exit Status', type: FieldType.number, values: exitStatusValues },
+      ],
+    });
   }
 
   async query(options: DataQueryRequest<MyQuery>): Promise<DataQueryResponse> {
@@ -87,27 +143,14 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
       const interpolatedStmt = getTemplateSrv().replace(stmt, options.scopedVars);
       return this.execOp(interpolatedStmt).then((response) => {
         let resourceIdToName = this.buildResourceIdToName(response.resources);
-        return response.metric_query.map((md: any) => {
-          let metricName = this.getGroupInfo(md, 'METRIC');
-          let resourceId = this.getGroupInfo(md, 'RESOURCE');
-          let resourceName = resourceIdToName.get(resourceId) || resourceId;
-          let frameName = `${metricName}: ${resourceName}`;
-          let tagsStr = this.getTagsStr(md);
-          if (tagsStr !== '') {
-            frameName += ` { ${tagsStr} }`;
-          }
-          return new MutableDataFrame({
-            refId: query.refId,
-            name: frameName,
-            meta: {
-              executedQueryString: response.stmt,
-            },
-            fields: [
-              { name: 'Time', type: FieldType.time, values: md.metric.timestamps },
-              { name: 'Value', type: FieldType.number, values: md.metric.values },
-            ],
+        if ('metric_query' in response) {
+          return response.metric_query.map((md: any) => {
+            return this.buildMetricQueryFrame(md, query.refId, response.stmt, resourceIdToName);
           });
-        });
+        }
+        if ('linux_cmd' in response) {
+          return this.buildLinuxCmdDataFrames(response, query.refId, resourceIdToName);
+        }
       });
     });
 
