@@ -161,7 +161,8 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
     if (query.query === '' || query.query === undefined) {
       throw new Error('Must provide a nonempty query');
     }
-    return this.execOp(query.query).then((response) => {
+    const interpolatedStmt = options ? getTemplateSrv().replace(query.query, options.scopedVars) : query.query;
+    return this.execOp(interpolatedStmt).then((response) => {
       if ('resources' in response) {
         return response.resources.map((resource: any) => {
           // handle resource chains, e.g. host | pod
