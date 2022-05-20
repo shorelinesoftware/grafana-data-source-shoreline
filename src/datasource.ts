@@ -151,6 +151,7 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
         if ('linux_cmd' in response) {
           return this.buildLinuxCmdDataFrames(response, query.refId, resourceIdToName);
         }
+        return [];
       });
     });
 
