@@ -234,6 +234,12 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
       options.range.to.unix() * 1000
     }`;
     return this.execOp(stmt).then((response) => {
+      if (
+        'annotation_query_rollup' in response === false ||
+        'annotation_list' in response.annotation_query_rollup === false
+      ) {
+        throw new Error('Annotation query result missing from json response');
+      }
       return response.annotation_query_rollup.annotation_list.flatMap(this.shorelineAnnotationToGrafana);
     });
   }
