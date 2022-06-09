@@ -1,5 +1,14 @@
-import React, { ChangeEvent, PureComponent } from 'react';
-import { LegacyForms, InlineFormLabel, InlineField, InlineFieldRow, Input, Checkbox } from '@grafana/ui';
+/* eslint-disable */
+
+import { ChangeEvent, PureComponent } from 'react';
+import {
+  LegacyForms,
+  InlineFormLabel,
+  InlineField,
+  InlineFieldRow,
+  Input,
+  Checkbox
+} from '@grafana/ui';
 import { QueryEditorProps, SelectableValue } from '@grafana/data';
 import { DataSource } from './datasource';
 import { MyDataSourceOptions, MyQuery } from './types';
@@ -38,7 +47,7 @@ export class QueryEditor extends PureComponent<Props> {
       let metric_symbols = symbols.map((symbol: any) => ({
         label: symbol.name,
         value: symbol.name,
-        description: symbol.attributes.description,
+        description: symbol.attributes.description
       }));
       this.setState({ metrics: metric_symbols });
     });
@@ -46,7 +55,7 @@ export class QueryEditor extends PureComponent<Props> {
       let resource_symbols = symbols.map((symbol: any) => ({
         label: symbol.name,
         value: symbol.name,
-        description: symbol.attributes.description,
+        description: symbol.attributes.description
       }));
       this.setState({ resources: resource_symbols });
     });
@@ -82,7 +91,9 @@ export class QueryEditor extends PureComponent<Props> {
               }}
               menuPlacement={'bottom'}
               width={25}
-              defaultValue={this.props.query.resourceQueryText && { label: this.props.query.resourceQueryText }}
+              defaultValue={
+                this.props.query.resourceQueryText && { label: this.props.query.resourceQueryText }
+              }
             />
             <InlineFormLabel width={10}>Metric Query</InlineFormLabel>
             <Select
@@ -97,11 +108,17 @@ export class QueryEditor extends PureComponent<Props> {
               }}
               menuPlacement={'bottom'}
               width={25}
-              defaultValue={this.props.query.metricQueryText && { label: this.props.query.metricQueryText }}
+              defaultValue={
+                this.props.query.metricQueryText && { label: this.props.query.metricQueryText }
+              }
             />
           </div>
         )}
-        <Checkbox label={'Custom'} value={this.state.custom} onChange={this.onCustomCheckboxChange} />
+        <Checkbox
+          label={'Custom'}
+          value={this.state.custom}
+          onChange={this.onCustomCheckboxChange}
+        />
       </div>
     );
   }
