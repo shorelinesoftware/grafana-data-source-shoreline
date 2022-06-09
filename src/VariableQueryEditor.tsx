@@ -16,22 +16,20 @@ export const VariableQueryEditor: React.FC<VariableQueryProps> = ({ onChange, qu
   const handleChange = (event: React.FormEvent<HTMLInputElement>) =>
     setState({
       ...state,
-      [event.currentTarget.name]: event.currentTarget.value,
+      [event.currentTarget.name]: event.currentTarget.value
     });
 
   return (
-    <>
-      <div className="gf-form">
-        <span className="gf-form-label width-10">Query</span>
-        <input
-          name="query"
-          className="gf-form-input"
-          onBlur={saveQuery}
-          onChange={handleChange}
-          value={state.query}
-          placeholder={'OpLang query'}
-        />
-      </div>
-    </>
+    <div className="gf-form">
+      <span className="gf-form-label width-10">Query</span>
+      <input
+        name="query"
+        className="gf-form-input"
+        onBlur={saveQuery}
+        onChange={handleChange}
+        value={state.query}
+        placeholder="OpLang query"
+      />
+    </div>
   );
 };

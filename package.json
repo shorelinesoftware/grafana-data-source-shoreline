@@ -36,6 +36,7 @@
     "@grafana/runtime": "latest",
     "@grafana/toolkit": "latest",
     "@grafana/ui": "latest",
+    "@jest/globals": "^28.1.1",
     "react": "^18.1.0",
     "uuid": "^8.3.2",
     "uuidv4": "^6.2.13"
