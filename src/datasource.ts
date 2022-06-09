@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 import { v4 as uuidv4 } from 'uuid';
 
 import {
@@ -8,7 +10,7 @@ import {
   DataSourceApi,
   DataSourceInstanceSettings,
   MutableDataFrame,
-  FieldType,
+  FieldType
 } from '@grafana/data';
 
 import { getBackendSrv, getTemplateSrv } from '@grafana/runtime';
@@ -41,9 +43,9 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
     if (query.metricQueryText === '' || query.metricQueryText === undefined) {
       throw new Error('Must provide a metric query');
     }
-    return `${query.resourceQueryText} | ${query.metricQueryText} | from=${options.range.from.unix() * 1000} | to=${
-      options.range.to.unix() * 1000
-    }`;
+    return `${query.resourceQueryText} | ${query.metricQueryText} | from=${
+      options.range.from.unix() * 1000
+    } | to=${options.range.to.unix() * 1000}`;
   }
 
   getGroupInfo(md: any, group: string): string {
@@ -88,7 +90,12 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
     return map;
   }
 
-  buildMetricQueryFrame(metricData: any, refId: string, stmt: string, resourceIdToName: Map<string, string>) {
+  buildMetricQueryFrame(
+    metricData: any,
+    refId: string,
+    stmt: string,
+    resourceIdToName: Map<string, string>
+  ) {
     let metricName = this.getGroupInfo(metricData, 'METRIC');
     let resourceId = this.getGroupInfo(metricData, 'RESOURCE');
     let resourceName = resourceIdToName.get(resourceId) || resourceId;
@@ -101,12 +108,12 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
       refId: refId,
       name: frameName,
       meta: {
-        executedQueryString: stmt,
+        executedQueryString: stmt
       },
       fields: [
         { name: 'Time', type: FieldType.time, values: metricData.metric.timestamps },
-        { name: 'Value', type: FieldType.number, values: metricData.metric.values },
-      ],
+        { name: 'Value', type: FieldType.number, values: metricData.metric.values }
+      ]
     });
   }
 
@@ -126,14 +133,14 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
       refId: refId,
       name: 'linux_cmd',
       meta: {
-        executedQueryString: response.stmt,
+        executedQueryString: response.stmt
       },
       fields: [
         { name: 'Resource Name', type: FieldType.string, values: resourceNames },
         { name: 'stdout', type: FieldType.string, values: stdoutValues },
         { name: 'stderr', type: FieldType.string, values: stderrValues },
-        { name: 'Exit Status', type: FieldType.number, values: exitStatusValues },
-      ],
+        { name: 'Exit Status', type: FieldType.number, values: exitStatusValues }
+      ]
     });
   }
 
@@ -162,7 +169,9 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
     if (query.query === '' || query.query === undefined) {
       throw new Error('Must provide a nonempty query');
     }
-    const interpolatedStmt = options ? getTemplateSrv().replace(query.query, options.scopedVars) : query.query;
+    const interpolatedStmt = options
+      ? getTemplateSrv().replace(query.query, options.scopedVars)
+      : query.query;
     return this.execOp(interpolatedStmt).then((response) => {
       if ('resources' in response) {
         return response.resources.map((resource: any) => {
@@ -191,7 +200,7 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
         return annotation.steps.map((step: any) => {
           let res: AnnotationEvent = {
             title: `${step.step_type}: ${annotation.resource_data.resource_name}`,
-            time: step.timestamp,
+            time: step.timestamp
           };
           return res;
         });
@@ -201,7 +210,7 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
             title: `${step.step_type}: ${annotation.action.name} on ${annotation.resource_data.resource_name}`,
             text: `BOT: ${annotation.bot.name}, ACTION: ${annotation.action.name}`,
             time: step.timestamp,
-            tags: [annotation.status],
+            tags: [annotation.status]
           };
         });
       case 'ALARM':
@@ -209,7 +218,7 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
           return {
             title: `${step.step_type}: ${annotation.alarm.name} on ${annotation.resource_data.resource_name}`,
             time: step.timestamp,
-            tags: [annotation.status],
+            tags: [annotation.status]
           };
         });
       case 'BOT':
@@ -218,7 +227,7 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
             title: `${step.step_type}: ${annotation.bot.name} on ${annotation.resource_data.resource_name}`,
             text: `ALARM: ${annotation.alarm.name}, ACTION: ${annotation.action.name}`,
             time: step.timestamp,
-            tags: [annotation.status],
+            tags: [annotation.status]
           };
         });
       default:
@@ -240,7 +249,9 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
       ) {
         throw new Error('Annotation query result missing from json response');
       }
-      return response.annotation_query_rollup.annotation_list.flatMap(this.shorelineAnnotationToGrafana);
+      return response.annotation_query_rollup.annotation_list.flatMap(
+        this.shorelineAnnotationToGrafana
+      );
     });
   }
 
@@ -250,12 +261,12 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
     if ('resources' in result === false) {
       return {
         status: 'error',
-        message: `Health check test query failed, response data: ${JSON.stringify(result)}`,
+        message: `Health check test query failed, response data: ${JSON.stringify(result)}`
       };
     }
     return {
       status: 'success',
-      message: 'Success',
+      message: 'Success'
     };
   }
 
@@ -268,9 +279,9 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
         method: 'POST',
         url: this.url + execute_path,
         headers: {
-          'Idempotency-Key': uuidv4(),
+          'Idempotency-Key': uuidv4()
         },
-        data: { statement: stmt },
+        data: { statement: stmt }
       })
       .then((result) => result.data);
   }
