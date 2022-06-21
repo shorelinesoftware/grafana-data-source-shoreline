@@ -11679,6 +11679,11 @@ run-queue@^1.0.0, run-queue@^1.0.3:
   dependencies:
     aproba "^1.1.1"
 
+runtypes@6.4.1:
+  version "6.4.1"
+  resolved "https://registry.yarnpkg.com/runtypes/-/runtypes-6.4.1.tgz#7123d3383a3d0e580392ab35db8dcd16393d49cd"
+  integrity sha512-L4a5LGXtYFdZmW6L2kVT2tA1mBXBdNTC9qGUHu9LMKEUPvDeWGxMMyP82NyfjwYFGGyoPADVvAHmwNrAHEDzhA==
+
 rw@1, rw@^1.3.3:
   version "1.3.3"
   resolved "https://registry.npmjs.org/rw/-/rw-1.3.3.tgz"

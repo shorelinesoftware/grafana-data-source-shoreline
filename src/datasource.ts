@@ -8,11 +8,21 @@ import {
   DataSourceApi,
   DataSourceInstanceSettings,
   MutableDataFrame,
-  FieldType
+  FieldType,
+  MetricFindValue
 } from '@grafana/data';
 
 import { getBackendSrv, getTemplateSrv } from '@grafana/runtime';
 
+import {
+  GroupInfo,
+  MetricQuery,
+  Resource,
+  Resources,
+  ListAttributes,
+  AnnotationListItem,
+  Step
+} from './api-types';
 import { MyQuery, MyDataSourceOptions, MyVariableQuery } from './types';
 
 const executePath = '/v1/execute';
@@ -38,17 +48,17 @@ function buildOpStatement(options: DataQueryRequest<MyQuery>, query: MyQuery): s
   } | to=${options.range.to.unix() * 1000}`;
 }
 
-function getGroupInfo(md: any, group: string): string {
-  const foundGroupInfo = md.group_infos.find((groupInfo: any) => groupInfo.group === group);
+function getGroupInfo(md: MetricQuery, group: string): string {
+  const foundGroupInfo = md.group_infos.find((groupInfo: GroupInfo) => groupInfo.group === group);
   if (foundGroupInfo !== undefined) {
     return foundGroupInfo.value;
   }
   return '';
 }
 
-function getTagsStr(md: any): string {
+function getTagsStr(md: MetricQuery): string {
   const tags: string[] = [];
-  md.group_infos.forEach((groupInfo: any) => {
+  md.group_infos.forEach((groupInfo: GroupInfo) => {
     if (groupInfo.group === 'TAG') {
       tags.push(`${groupInfo.name}: ${groupInfo.value}`);
     }
@@ -56,66 +66,35 @@ function getTagsStr(md: any): string {
   return tags.sort().join(', ');
 }
 
-function cmpFrames(frameA: any, frameB: any) {
-  if (frameA.name < frameB.name) {
+function cmpFrames(frameA: MutableDataFrame, frameB: MutableDataFrame) {
+  if (frameA.name! < frameB.name!) {
     return 1;
   }
-  if (frameB.name < frameA.name) {
+  if (frameB.name! < frameA.name!) {
     return -1;
   }
   return 0;
 }
 
-function buildResourceIdToName(resources: any[]): Map<string, string> {
-  const map: Map<string, string> = new Map<string, string>();
+function buildResourceIdToName(resources: Resources): Map<string, string> {
+  const resourceIdToName: Map<string, string> = new Map<string, string>();
   resources.forEach((resource) => {
     // handle resource chains, e.g. host | pod
     if (Array.isArray(resource)) {
       const lastResource = resource[resource.length - 1];
-      map.set(lastResource.id.toString(), lastResource.name);
+      resourceIdToName.set(lastResource.id.toString(), lastResource.name);
     } else {
-      map.set(resource.id.toString(), resource.name);
+      resourceIdToName.set(resource.id.toString(), resource.name);
     }
   });
-  return map;
+  return resourceIdToName;
 }
 
-function buildLinuxCmdDataFrames(
-  response: any,
-  refId: string,
-  resourceIdToName: Map<string, string>
-) {
-  const resourceNames: string[] = [];
-  const stdoutValues: string[] = [];
-  const stderrValues: string[] = [];
-  const exitStatusValues: number[] = [];
-
-  response.linux_cmd.forEach((cmdRes: any) => {
-    resourceNames.push(cmdRes.pod || resourceIdToName.get(cmdRes.host_id.toString()));
-    stdoutValues.push(cmdRes.stdout);
-    stderrValues.push(cmdRes.stderr);
-    exitStatusValues.push(cmdRes.exit_status);
-  });
-  return new MutableDataFrame({
-    refId,
-    name: 'linux_cmd',
-    meta: {
-      executedQueryString: response.stmt
-    },
-    fields: [
-      { name: 'Resource Name', type: FieldType.string, values: resourceNames },
-      { name: 'stdout', type: FieldType.string, values: stdoutValues },
-      { name: 'stderr', type: FieldType.string, values: stderrValues },
-      { name: 'Exit Status', type: FieldType.number, values: exitStatusValues }
-    ]
-  });
-}
-
-function shorelineAnnotationToGrafana(annotation: any): AnnotationEvent[] {
-  annotation.steps.sort((step1: any, step2: any) => step1.timestamp - step2.timestamp);
+function shorelineAnnotationToGrafana(annotation: AnnotationListItem): AnnotationEvent[] {
+  annotation.steps.sort((step1: Step, step2: Step) => step1.timestamp - step2.timestamp);
   switch (annotation.entity_type) {
     case 'RESOURCE':
-      return annotation.steps.map((step: any) => {
+      return annotation.steps.map((step: Step) => {
         const res: AnnotationEvent = {
           title: `${step.step_type}: ${annotation.resource_data.resource_name}`,
           time: step.timestamp
@@ -123,20 +102,20 @@ function shorelineAnnotationToGrafana(annotation: any): AnnotationEvent[] {
         return res;
       });
     case 'ACTION':
-      return annotation.steps.map((step: any) => ({
+      return annotation.steps.map((step: Step) => ({
         title: `${step.step_type}: ${annotation.action.name} on ${annotation.resource_data.resource_name}`,
         text: `BOT: ${annotation.bot.name}, ACTION: ${annotation.action.name}`,
         time: step.timestamp,
         tags: [annotation.status]
       }));
     case 'ALARM':
-      return annotation.steps.map((step: any) => ({
+      return annotation.steps.map((step: Step) => ({
         title: `${step.step_type}: ${annotation.alarm.name} on ${annotation.resource_data.resource_name}`,
         time: step.timestamp,
         tags: [annotation.status]
       }));
     case 'BOT':
-      return annotation.steps.map((step: any) => ({
+      return annotation.steps.map((step: Step) => ({
         title: `${step.step_type}: ${annotation.bot.name} on ${annotation.resource_data.resource_name}`,
         text: `ALARM: ${annotation.alarm.name}, ACTION: ${annotation.action.name}`,
         time: step.timestamp,
@@ -148,7 +127,7 @@ function shorelineAnnotationToGrafana(annotation: any): AnnotationEvent[] {
 }
 
 function buildMetricQueryFrame(
-  metricData: any,
+  metricData: MetricQuery,
   refId: string,
   stmt: string,
   resourceIdToName: Map<string, string>
@@ -189,21 +168,18 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
       return this.execOp(interpolatedStmt).then((response) => {
         const resourceIdToName = buildResourceIdToName(response.resources);
         if ('metric_query' in response) {
-          return response.metric_query.map((md: any) =>
+          return response.metric_query.map((md: MetricQuery) =>
             buildMetricQueryFrame(md, query.refId, response.stmt, resourceIdToName)
           );
         }
-        if ('linux_cmd' in response) {
-          return buildLinuxCmdDataFrames(response, query.refId, resourceIdToName);
-        }
-        return [];
+        throw new Error('No metric query found in response');
       });
     });
 
     return Promise.all(promises).then((results) => ({ data: results.flat().sort(cmpFrames) }));
   }
 
-  async metricFindQuery(query: MyVariableQuery, options?: any) {
+  async metricFindQuery(query: MyVariableQuery, options?: any): Promise<MetricFindValue[]> {
     if (query.query === '' || query.query === undefined) {
       throw new Error('Must provide a nonempty query');
     }
@@ -212,7 +188,7 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
       : query.query;
     return this.execOp(interpolatedStmt).then((response) => {
       if ('resources' in response) {
-        return response.resources.map((resource: any) => {
+        return response.resources.map((resource: Resource) => {
           // handle resource chains, e.g. host | pod
           if (Array.isArray(resource)) {
             return { text: resource[resource.length - 1].name };
@@ -221,7 +197,7 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
         });
       }
       if ('list_type' in response) {
-        return response.list_type.symbol.map((symbol: any) => ({ text: symbol.name }));
+        return response.list_type.symbol.map((symbol: ListAttributes) => ({ text: symbol.name }));
       }
       throw new Error('Variable query must be a resource query or list symbol');
     });
