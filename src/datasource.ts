@@ -200,17 +200,25 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
         return response.list_type.symbol.map((symbol: ListAttributes) => ({ text: symbol.name }));
       }
       if ('metric_metadata_query' in response) {
-        const metricArr = response.metric_metadata_query.metric_names;
-        const resourceArr = response.metric_metadata_query.resource_names;
-        const tagsArr = response.metric_metadata_query.tags;
-        let tagValueArray = Array(String);
-        for (let i = 0; i < tagsArr.length; i += 1) {
-          tagValueArray = tagValueArray.concat(tagsArr[i].values);
-        }
-        let metricMetadataString = metricArr.concat(resourceArr, tagValueArray);
-        metricMetadataString = metricMetadataString.filter((str: String) => str !== undefined);
+        if (interpolatedStmt.includes('tag_key=')) {
+          const tagsArr = response.metric_metadata_query.tags;
+          let tagValueArray: String[] = [];
+          for (let i = 0; i < tagsArr.length; i += 1) {
+            tagValueArray = tagValueArray.concat(tagsArr[i].values);
+          }
 
-        return metricMetadataString.map((data: Array<String>) => ({ text: data }));
+          return tagValueArray.map((data: String) => ({ text: data }));
+        }
+        if (interpolatedStmt.includes('metric_name=')) {
+          return response.metric_metadata_query.resource_names.map((data: Array<String>) => ({
+            text: data
+          }));
+        }
+
+        if (interpolatedStmt.includes('resource_id=')) {
+          const metricArr = response.metric_metadata_query.metric_names;
+          return metricArr.map((data: Array<String>) => ({ text: data }));
+        }
       }
       throw new Error('Variable query must be a resource query or list symbol');
     });
