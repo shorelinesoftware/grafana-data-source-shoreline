@@ -249,6 +249,237 @@ describe('Shoreline datasource', () => {
         'list resources'
       );
     });
+
+    it('should return list of resources', async () => {
+      const mockDatasourceRequest = jest.fn(() =>
+        Promise.resolve({
+          data: {
+            metric_metadata_query: {
+              metric_names: ['push_time_seconds'],
+              resource_names: ['2', '61', '3', '1'],
+              tags: [
+                {
+                  name: 'instance',
+                  values: ['']
+                },
+                {
+                  name: 'job',
+                  values: ['beam_service', 'resource_manager', 'oplang_service', 'db_server']
+                },
+                {
+                  name: 'resource_manager',
+                  values: ['resource_manager_server']
+                },
+                {
+                  name: 'oplang_service',
+                  values: ['oplang_server']
+                },
+                {
+                  name: 'key',
+                  values: ['ops_agent']
+                },
+                {
+                  name: 'value',
+                  values: ['beam_metrics']
+                },
+                {
+                  name: 'db_service',
+                  values: ['db_server']
+                }
+              ]
+            }
+          }
+        })
+      );
+      (getBackendSrv as jest.Mock).mockImplementation(() => ({
+        datasourceRequest: mockDatasourceRequest
+      }));
+
+      const ds = new DataSource({ name: '', id: 0, jsonData: {} } as any);
+      const result = await ds.metricFindQuery({
+        query: 'metric_metadata_query(metric_name="push_time_seconds")'
+      } as any as MyVariableQuery);
+      expect(result.length).toEqual(4);
+      expect(result[0].text).toEqual('2');
+      expect(result[1].text).toEqual('61');
+
+      expect((mockDatasourceRequest.mock.calls[0] as any)[0].data.statement).toEqual(
+        'metric_metadata_query(metric_name="push_time_seconds")'
+      );
+    });
+
+    it('should return list of tags', async () => {
+      const mockDatasourceRequest = jest.fn(() =>
+        Promise.resolve({
+          data: {
+            metric_metadata_query: {
+              metric_names: ['push_time_seconds'],
+              resource_names: ['2', '61', '3', '1'],
+              tags: [
+                {
+                  name: 'job',
+                  values: ['beam_service', 'resource_manager', 'oplang_service', 'db_server']
+                }
+              ]
+            }
+          }
+        })
+      );
+      (getBackendSrv as jest.Mock).mockImplementation(() => ({
+        datasourceRequest: mockDatasourceRequest
+      }));
+
+      const ds = new DataSource({ name: '', id: 0, jsonData: {} } as any);
+      const result = await ds.metricFindQuery({
+        query: 'metric_metadata_query(metric_name="push_time_seconds", tag_key="job")'
+      } as any as MyVariableQuery);
+      expect(result.length).toEqual(4);
+      expect(result[0].text).toEqual('beam_service');
+      expect(result[1].text).toEqual('resource_manager');
+      expect(result[2].text).toEqual('oplang_service');
+
+      expect((mockDatasourceRequest.mock.calls[0] as any)[0].data.statement).toEqual(
+        'metric_metadata_query(metric_name="push_time_seconds", tag_key="job")'
+      );
+    });
+
+    it('should return list of metrics', async () => {
+      const mockDatasourceRequest = jest.fn(() =>
+        Promise.resolve({
+          data: {
+            metric_metadata_query: {
+              metric_names: [
+                'prometheus_sd_kubernetes_workqueue_longest_running_processor_seconds',
+                'node_memory_MemTotal_bytes',
+                'scraper_service_scrape_loop_scrape_total_seconds_sum',
+                'scraper_service_grpc_request_duration_seconds_sum',
+                'scraper_service_process_resident_memory_bytes',
+                'scraper_service_scrape_loop_scrape_total_seconds_bucket',
+                'node_network_receive_drop_total',
+                'process_uptime_seconds',
+                'scraper_service_process_virtual_memory_max_bytes',
+                'statsd_metric_mapper_cache_gets_total',
+                'scraper_service_scrape_loop_scrape_total_seconds_count',
+                'dbserver_process_resident_memory_bytes',
+                'statsd_exporter_loaded_mappings',
+                'node_network_transmit_errs_total',
+                'statsd_exporter_tcp_connection_errors_total',
+                'scraper_service_flush_num_ingestion_dbs',
+                'process_resident_memory_bytes',
+                'prometheus_sd_failed_configs',
+                'node_network_transmit_bytes_total',
+                'node_filesystem_avail_bytes',
+                'prometheus_sd_kubernetes_events_total',
+                'dbserver_process_start_time_seconds',
+                'prometheus_sd_kubernetes_http_request_duration_seconds_count',
+                'process_virtual_memory_bytes',
+                'process_max_fds',
+                'node_vmstat_pgmajfault',
+                'process_cpu_seconds_total',
+                'statsd_it_metric',
+                'scraper_service_process_max_fds',
+                'process_noio_pagefaults_total',
+                'prometheus_sd_kubernetes_workqueue_work_duration_seconds_sum',
+                'prometheus_sd_kubernetes_http_request_total',
+                'statsd_exporter_lines_total',
+                'statsd_exporter_unixgram_packets_total',
+                'node_disk_written_bytes_total',
+                'dbserver_process_max_fds',
+                'prometheus_sd_kubernetes_workqueue_depth',
+                'dbserver_process_open_fds',
+                'scraper_service_scrape_job_dropped_targets_num',
+                'node_filesystem_free_bytes',
+                'node_memory_Buffers_bytes',
+                'scraper_service_flush_total_take',
+                'node_filesystem_size_bytes',
+                'node_network_receive_errs_total',
+                'statsd_exporter_metrics_total',
+                'scraper_service_config_error',
+                'node_network_transmit_packets_total',
+                'statsd_exporter_tags_total',
+                'process_io_pagefaults_total',
+                'prometheus_sd_kubernetes_workqueue_latency_seconds_count',
+                'scraper_service_process_cpu_seconds_total',
+                'statsd_exporter_tag_errors_total',
+                'statsd_exporter_samples_total',
+                'prometheus_sd_kubernetes_http_request_duration_seconds_sum',
+                'prometheus_sd_received_updates_total',
+                'node_disk_reads_completed_total',
+                'statsd_exporter_tcp_connections_total',
+                'push_failure_time_seconds',
+                'scraper_service_flush_num_metrics',
+                'scraper_service_alarms_num_acprs_computed_in_compiled_mode',
+                'process_signals_delivered_total',
+                'process_disk_writes_total',
+                'scraper_service_scrape_loop_ingested_metrics_num',
+                'scraper_service_log_messages_total',
+                'node_vmstat_oom_kill',
+                'statsd_metric_mapper_cache_length',
+                'node_disk_read_bytes_total',
+                'dbserver_process_virtual_memory_bytes',
+                'dbserver_process_cpu_seconds_total',
+                'statsd_exporter_event_queue_flushed_total',
+                'process_disk_reads_total',
+                'process_voluntary_context_switches_total',
+                'process_involuntary_context_switches_total',
+                'node_network_receive_packets_total',
+                'node_cpu_seconds_total',
+                'prometheus_sd_updates_total',
+                'node_disk_writes_completed_total',
+                'prometheus_sd_discovered_targets',
+                'prometheus_sd_kubernetes_workqueue_items_total',
+                'process_start_time_seconds',
+                'push_time_seconds',
+                'statsd_exporter_events_total',
+                'node_memory_Cached_bytes',
+                'node_network_transmit_drop_total',
+                'node_vmstat_pgfault',
+                'node_memory_MemFree_bytes',
+                'process_threads_total',
+                'prometheus_sd_kubernetes_workqueue_latency_seconds_sum',
+                'process_max_resident_memory_bytes',
+                'scraper_service_grpc_request_duration_seconds_bucket',
+                'statsd_exporter_udp_packets_total',
+                'scraper_service_process_open_fds',
+                'statsd_metric_mapper_cache_hits_total',
+                'scraper_service_alarms_registered_alarm_queries',
+                'dbserver_process_threads',
+                'scraper_service_alarms_check_status_alarm_queries_sum',
+                'node_network_receive_bytes_total',
+                'scraper_service_grpc_request_duration_seconds_count',
+                'scraper_service_process_start_time_seconds',
+                'scraper_service_scrape_job_active_targets_num',
+                'shoreline_process_memory_bytes',
+                'process_open_fds',
+                'statsd_exporter_tcp_too_long_lines_total',
+                'process_swaps_total',
+                'scraper_service_process_virtual_memory_bytes',
+                'prometheus_sd_kubernetes_workqueue_unfinished_work_seconds',
+                'prometheus_sd_kubernetes_workqueue_work_duration_seconds_count',
+                'scraper_service_alarms_check_status_alarm_queries_count',
+                'statsd_exporter_events_unmapped_total'
+              ],
+              resource_names: [],
+              tags: []
+            }
+          }
+        })
+      );
+      (getBackendSrv as jest.Mock).mockImplementation(() => ({
+        datasourceRequest: mockDatasourceRequest
+      }));
+
+      const ds = new DataSource({ name: '', id: 0, jsonData: {} } as any);
+      const result = await ds.metricFindQuery({
+        query: 'metric_metadata_query(resource_id="1")'
+      } as any as MyVariableQuery);
+      expect(result.length).toEqual(109);
+      expect(result[1].text).toEqual('node_memory_MemTotal_bytes');
+      expect(result[6].text).toEqual('node_network_receive_drop_total');
+      expect((mockDatasourceRequest.mock.calls[0] as any)[0].data.statement).toEqual(
+        'metric_metadata_query(resource_id="1")'
+      );
+    });
   });
 
   describe('when performing annotation query call', () => {
