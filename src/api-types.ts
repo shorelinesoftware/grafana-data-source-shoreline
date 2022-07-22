@@ -69,6 +69,15 @@ export const ExecuteResourcesPartial = Object({
 export type ExecuteResourcesPartial = Static<typeof ExecuteResourcesPartial>;
 export type Resources = Static<typeof Resources>;
 
+// metric metadata types
+
+export const MetricMetadataTag = Object({
+  name: String,
+  values: Array(String)
+});
+
+export type MetricMetadataTag = Static<typeof MetricMetadataTag>;
+
 // event query types
 export const EventItem = Object({
   id: Number,

@@ -21,7 +21,8 @@ import {
   Resources,
   ListAttributes,
   AnnotationListItem,
-  Step
+  Step,
+  MetricMetadataTag
 } from './api-types';
 import { MyQuery, MyDataSourceOptions, MyVariableQuery } from './types';
 
@@ -201,13 +202,9 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
       }
       if ('metric_metadata_query' in response) {
         if (interpolatedStmt.includes('tag_key=')) {
-          const tagsArr = response.metric_metadata_query.tags;
-          let tagValueArray: String[] = [];
-          for (let i = 0; i < tagsArr.length; i += 1) {
-            tagValueArray = tagValueArray.concat(tagsArr[i].values);
-          }
-
-          return tagValueArray.map((data: String) => ({ text: data }));
+          const tagArr = response.metric_metadata_query.tags;
+          const tagValuesArray = tagArr.flatMap((v: MetricMetadataTag) => v.values);
+          return tagValuesArray.map((data: Array<String>) => ({ text: data }));
         }
         if (interpolatedStmt.includes('metric_name=')) {
           return response.metric_metadata_query.resource_names.map((data: Array<String>) => ({
@@ -220,7 +217,9 @@ export class DataSource extends DataSourceApi<MyQuery, MyDataSourceOptions> {
           return metricArr.map((data: Array<String>) => ({ text: data }));
         }
       }
-      throw new Error('Variable query must be a resource query or list symbol');
+      throw new Error(
+        'Variable query must be a resource query, list symbol, or metric metadata query'
+      );
     });
   }
 
